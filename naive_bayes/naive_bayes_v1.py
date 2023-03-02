@@ -10,14 +10,17 @@ import numpy as np
 import sys
 
 class NaiveBayes:
-    
+   
+    def __init__(self, verbose=False):
+        self._verbose = verbose
+
     def fit(self, X, y):
         n_samples, n_features = X.shape
         self._classes = np.unique(y) # y is the actual answer.
         n_classes = len(self._classes)
         
-        print("Classes: ", file=sys.stderr)
-        print(self._classes, file=sys.stderr)
+        if self._verbose: print("Classes: ", file=sys.stderr)
+        if self._verbose: print(self._classes, file=sys.stderr)
         
         # init mean, var, prior
         self._mean = np.zeros((n_classes, n_features), dtype=np.float64) # mean for each feature
@@ -42,8 +45,8 @@ class NaiveBayes:
             X_c = X[c==y] # select by row based on another array.
                           # here we'll have a n classes row x 10 col array
                           # and then we'll compute the mean for current class
-            print("X_c.dtype:")
-            print(X_c.dtype)
+            if self._verbose: print("X_c.dtype:", file=sys.stderr)
+            if self._verbose: print(X_c.dtype, file=sys.stderr)
             # In this next line, we actually compute the mean of the X_c array and store it  
             # in the index #c(i.e. 0 or 1) of the self._mean array. 
             # again one index per class

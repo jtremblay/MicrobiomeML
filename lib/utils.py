@@ -11,7 +11,7 @@ import sys
 
 class Utils:
     
-    def __init__(self):
+    def __init__(self, verbose=False):
         self._mapping = np.array([], dtype=object)
         self._variable_index = int
         self._variable = str
@@ -21,6 +21,7 @@ class Utils:
         self._y_string = np.array([], dtype=object)
         self._y = np.array([], dtype=int)
         self._y_key = []
+        self._verbose = verbose
 
     @property
     def data(self):
@@ -145,15 +146,15 @@ class Utils:
                 idxs2.append(i)
                 #sample_ids_present.append(v)
             else:
-                print(v + " was not found!!!")
+                if self._verbose: print(v + " was not found!!!", file=sys.stderr)
 
         #print(idxs2)    
         sample_ids_present = np.array(self._sample_ids)[idxs2]
-        print(self._data.shape)
+        if self._verbose: print(self._data.shape, file=sys.stderr)
         X = self._data[idxs2]
 
         y = self._mapping[:,self._variable_index]
-        print(sample_ids_present.shape)
+        if self._verbose: print(sample_ids_present.shape, file=sys.stderr)
         #print(X.shape)
         #print(y.shape)
         self._sample_ids = sample_ids_present
