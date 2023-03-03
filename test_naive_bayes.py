@@ -22,6 +22,8 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn import datasets
 import matplotlib.pyplot as plt
+from statistics import mean, stdev
+import re
 
 def parse_command_line_arguments():
     parser = argparse.ArgumentParser(description='Test Naive Bayes for microbiome data.')
@@ -37,6 +39,9 @@ def parse_command_line_arguments():
     return args
 
 def main(arguments):
+
+    def dict_val(x):
+        return x[1]
 
     def accuracy(y_true, y_pred):
         accuracy = np.sum(y_true == y_pred) / len(y_true)
@@ -59,23 +64,67 @@ def main(arguments):
     if verbose: print(ut.data.shape, file=sys.stderr)
     if verbose: print(ut.X.shape, file=sys.stderr)
     if verbose: print(len(ut.sample_ids), file=sys.stderr)
-    if verbose: print(ut.y, file=sys.stderr)
+    if verbose: print("ut.y:" + str(ut.y.shape), file=sys.stderr)
     if verbose: print(ut.y_key, file=sys.stderr)
 
     print("#########################################################################")
     print("Naive Bayes model was trained with variable '" + str(ut.variable) + "'", file=sys.stderr)
     res = {}
+    
+    # Here basically do combination of all possible combination of features
+    if args.find_optimal_features is True:
+        #for i in range(1, 
+        #taxa = ut.taxa
+        curr_taxa = np.array([], dtype=object)
+        j = 0
+        for i in range(0, ut.taxa.shape[0] - 1):
+            for j in range(i + 1, ut.taxa.shape[0]):
+                for k in range(0,2):
+                    #print("i: {} j: {} k: {}".format(i, j, k))
+                    if(k == 0):
+                        curr_taxa = ut.taxa[[i,j]]
+                    else:
+                        curr_taxa = ut.taxa[i:(j+1):1]
 
-    for i,v in enumerate(range(1,(number_of_rounds + 1))):
-        nb = NaiveBayes(verbose)
-        my_random_int = random.randint(123,12345)
-        X_train, X_test, y_train, y_test = train_test_split(ut.X, ut.y, test_size=0.2, random_state=my_random_int)
-        nb.fit(X_train, y_train)
-        predictions = nb.predict(X_test)
-        my_accuracy = accuracy(y_test, np.array(predictions))
-        print("Accuracy: {0:0.4f} ;random int {1}:".format(my_accuracy, my_random_int), file=sys.stderr)
+                    ut.generate_data_selection_by_taxa(curr_taxa)
+                    #print(ut.X)
+                    #print("current taxa: " + str(list(curr_taxa)))
+                    
+                    my_accuracies = []
+                    for m,v in enumerate(range(1,(number_of_rounds + 1))):
+                        nb = NaiveBayes(verbose)
+                        my_random_int = random.randint(123,12345)
+                        X_train, X_test, y_train, y_test = train_test_split(ut.X_selected_by_taxa, ut.y, test_size=0.2, random_state=my_random_int)
+                        nb.fit(X_train, y_train)
+                        predictions = nb.predict(X_test)
+                        my_accuracy = accuracy(y_test, np.array(predictions))
+                        #print("    Accuracy: {0:0.4f} ;random int {1}:".format(my_accuracy, my_random_int), file=sys.stderr)
+                        my_accuracies.append(my_accuracy)
+                    res[str(curr_taxa)] =  mean(my_accuracies)
+        
+        res_sorted = sorted(res.items(), key=dict_val)
 
-        res[i] = {'random_int': my_random_int,'accuracy' : my_accuracy}
+        for key in  res:
+            print(key)
+            key2 = re.sub("\n", "\\n", key) 
+            #print(key2)
+            print(res[key])
+
+    
+    else:
+        my_accuracies = []
+        for i,v in enumerate(range(1,(number_of_rounds + 1))):
+            nb = NaiveBayes(verbose)
+            my_random_int = random.randint(123,12345)
+            X_train, X_test, y_train, y_test = train_test_split(ut.X, ut.y, test_size=0.2, random_state=my_random_int)
+            nb.fit(X_train, y_train)
+            predictions = nb.predict(X_test)
+            my_accuracy = accuracy(y_test, np.array(predictions))
+            print("Accuracy: {0:0.4f} ;random int {1}:".format(my_accuracy, my_random_int), file=sys.stderr)
+
+            res[i] = {'random_int': my_random_int,'accuracy' : my_accuracy}
+            my_accuracies.append(my_accuracy)
+        print("mean of accuracies: {}, stdev: {}".format(mean(my_accuracies), stdev(my_accuracies)))
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv[1:]))
