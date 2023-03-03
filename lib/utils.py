@@ -22,6 +22,10 @@ class Utils:
         self._y = np.array([], dtype=int)
         self._y_key = []
         self._verbose = verbose
+        self._taxa = np.array([], dtype=object)
+        # for selected taxa
+        self._X_selected_by_taxa = np.array([], dtype=np.float64)
+        self._y_selected_by_taxa = np.array([], dtype=object)
 
     @property
     def data(self):
@@ -50,10 +54,22 @@ class Utils:
     @property
     def y(self):
         return self._y
+    
+    @property
+    def X_selected_by_taxa(self):
+        return self._X_selected_by_taxa
+
+    @property
+    def y_selected_by_taxa(self):
+        return self._y_selected_by_taxa
 
     @property
     def y_key(self):
         return self._y_key
+
+    @property
+    def taxa(self):
+        return self._taxa
 
     """Import metadata from a mapping tsv file)"""
     def load_mapping_file(self, infile_mapping, variable):
@@ -106,6 +122,7 @@ class Utils:
         
         self._data = np.transpose(data)
         self._sample_ids = sample_ids
+        self._taxa = np.array(taxa)
     
     """"Import data from an ASV/OTU table tsv file format"""    
     def load_abundance_asv(self, infile):
@@ -160,6 +177,33 @@ class Utils:
         self._sample_ids = sample_ids_present
         self._y_string = y 
         self._X = np.array(X, dtype=np.float64)
+    
+    def validate_data(self): 
+        idxs = []
+        idxs2 = []
+
+        for i,v in enumerate(self._sample_ids):
+            # Do mapping
+            if str(list(self._mapping.T[0])).find(v) != -1:
+                k = list(self._mapping.T[0]).index(v)
+                idxs.append(k)
+                idxs2.append(i)
+                #sample_ids_present.append(v)
+            else:
+                if self._verbose: print(v + " was not found!!!", file=sys.stderr)
+
+        #print(idxs2)    
+        sample_ids_present = np.array(self._sample_ids)[idxs2]
+        if self._verbose: print(self._data.shape, file=sys.stderr)
+        X = self._data[idxs2]
+
+        y = self._mapping[:,self._variable_index]
+        if self._verbose: print(sample_ids_present.shape, file=sys.stderr)
+        #print(X.shape)
+        #print(y.shape)
+        self._sample_ids = sample_ids_present
+        self._y_string = y 
+        self._X = np.array(X, dtype=np.float64)
 
     def generate_y_keys(self):
         # Before going further, we'll create a simple key equivalence scheme for classes/anwers
@@ -178,4 +222,16 @@ class Utils:
         # sicne data contains many 0, lets add 1 to each cell.
         #X = X + 1
         #print(X)
+
+    def generate_data_selection_by_taxa(self, taxa_to_select):
+        idxs = []
+        #to_select = np.array(["taxon-3", "taxon-5"])
+        for i,v in enumerate(taxa_to_select):
+            if str(list(self._taxa)).find(v) != -1:
+                k = list(self._taxa).index(v)
+                idxs.append(k)
+        print(idxs)
+        
+        self._X_selected_by_taxa = self._X[:,idxs]
+        #self._y_selected_by_taxa = np.array(self._y[idxs])
 
